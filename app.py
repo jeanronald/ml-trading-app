@@ -14,7 +14,7 @@ st.set_page_config(page_title="ML Trading App", layout="wide")
 st.title("📈 Machine Learning Trading Strategy")
 
 # === SIDEBAR ===
-etf_list = ["XEG.TO","XIT.TO","XGD.TO","VCN.TO","ZAG.TO","VGRO.TO","VEQT.TO"]
+etf_list = ["XEG.TO","XIT.TO","XGD.TO","VCN.TO","ZAG.TO","VGRO.TO","VEQT.TO","AAPL"]
 ticker = st.sidebar.selectbox("🔍 Choisis un ETF", etf_list)
 start_date = st.sidebar.date_input("📅 Date de début", datetime(2015, 1, 1))
 end_date = st.sidebar.date_input("📅 Date de fin", datetime.today())
