@@ -33,10 +33,16 @@ if start_date >= end_date:
     st.stop()
 
 # === DATA LOADING ===
-df = yf.download(ticker, start=start_date, end=end_date)
-if df.empty:
-    st.error("Aucune donnée téléchargée. Vérifie le ticker.")
+try:
+    df = yf.download(ticker, start=start_date, end=end_date)
+except Exception as e:
+    st.error(f"Erreur lors du téléchargement de {ticker} : {e}")
     st.stop()
+
+if df.empty:
+    st.warning(f"Aucune donnée reçue pour {ticker}. Essaie un autre ticker comme AAPL.")
+    st.stop()
+
 
 df = df[["Close"]].copy()
 df["Return"] = df["Close"].pct_change()
