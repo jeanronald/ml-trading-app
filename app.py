@@ -9,17 +9,12 @@ from datetime import datetime
 import joblib
 import os
 
-# === SETUP FOLDER FOR SAVED FILES ===
-SAVE_DIR = "saved_files"
-os.makedirs(SAVE_DIR, exist_ok=True)
-
 # === PAGE SETUP ===
 st.set_page_config(page_title="ML Trading App", layout="wide")
 st.title("📈 Machine Learning Trading Strategy")
 
 # === SIDEBAR ===
-#etf_list = ["XEG.TO", "XIT.TO", "XGD.TO", "VCN.TO", "ZAG.TO", "VGRO.TO", "VEQT.TO"]
-etf_list = ["AAPL", "MSFT", "GOOG", "TSLA", "SPY"]
+etf_list = ["XEG.TO","XIT.TO","XGD.TO","VCN.TO","ZAG.TO","VGRO.TO","VEQT.TO"]
 ticker = st.sidebar.selectbox("🔍 Choisis un ETF", etf_list)
 start_date = st.sidebar.date_input("📅 Date de début", datetime(2015, 1, 1))
 end_date = st.sidebar.date_input("📅 Date de fin", datetime.today())
@@ -34,16 +29,10 @@ if start_date >= end_date:
     st.stop()
 
 # === DATA LOADING ===
-try:
-    df = yf.download(ticker, start=start_date, end=end_date)
-except Exception as e:
-    st.error(f"Erreur lors du téléchargement de {ticker} : {e}")
-    st.stop()
-
+df = yf.download(ticker, start=start_date, end=end_date)
 if df.empty:
-    st.warning(f"Aucune donnée reçue pour {ticker}. Essaie un autre ticker comme AAPL.")
+    st.error("Aucune donnée téléchargée. Vérifie le ticker.")
     st.stop()
-
 
 df = df[["Close"]].copy()
 df["Return"] = df["Close"].pct_change()
@@ -60,7 +49,7 @@ X = df[features]
 y = df["Target"]
 X_train, X_test, y_train, y_test = train_test_split(X, y, shuffle=False, test_size=0.2)
 
-model_filename = os.path.join(SAVE_DIR, f"{ticker}_rf_model.joblib")
+model_filename = f"{ticker}_rf_model.joblib"
 
 # === MODEL TRAINING/LOADING ===
 if retrain_mode == "📦 Charger modèle sauvegardé si dispo" and os.path.exists(model_filename):
@@ -131,7 +120,6 @@ ax.legend()
 ax.grid(True)
 st.pyplot(fig)
 
-# === TRADES TABLE ===
 trades_df = pd.DataFrame(columns=["Buy Date", "Buy Price", "Sell Date", "Sell Price"])
 for buy, sell in zip(buy_signals, sell_signals):
     trades_df = pd.concat([trades_df, pd.DataFrame([{
@@ -142,9 +130,8 @@ for buy, sell in zip(buy_signals, sell_signals):
 trades_df["Gain ($)"] = trades_df["Sell Price"] - trades_df["Buy Price"]
 trades_df["Durée (jours)"] = pd.to_datetime(trades_df["Sell Date"]) - pd.to_datetime(trades_df["Buy Date"])
 
-# === EXPORT TO EXCEL ===
 if st.button("📁 Exporter les résultats en Excel"):
-    excel_name = os.path.join(SAVE_DIR, f"{ticker}_ml_strategy_results.xlsx")
+    excel_name = f"{ticker}_ml_strategy_results.xlsx"
     with pd.ExcelWriter(excel_name, engine="openpyxl") as writer:
         df.to_excel(writer, sheet_name="Données complètes")
         trades_df.to_excel(writer, sheet_name="Signaux", index=False)
@@ -154,15 +141,13 @@ if st.button("📁 Exporter les résultats en Excel"):
         }).to_excel(writer, sheet_name="Résumé", index=False)
     st.success(f"Fichier exporté : {excel_name}")
 
-# === PREDICTION FOR TOMORROW ===
 st.subheader("🔮 Signal prédit pour demain")
 latest = df[features].iloc[[-1]]
 signal = model.predict(latest)[0]
 prediction_label = "🟢 BUY" if signal == 1 else "🔴 SELL"
 st.markdown(f"**Signal prédictif**: {prediction_label}")
 
-# === LOG PREDICTION ===
-log_path = os.path.join(SAVE_DIR, f"{ticker}_prediction_log.csv")
+log_path = f"{ticker}_prediction_log.csv"
 new_row = pd.DataFrame([{
     "Date": datetime.today().date(),
     "Signal": "BUY" if signal == 1 else "SELL"
@@ -176,7 +161,6 @@ else:
     prediction_log = new_row
     prediction_log.to_csv(log_path, index=False)
 
-# === DISPLAY LOG & STATS ===
 st.subheader("🗂️ Historique des signaux journaliers")
 st.dataframe(prediction_log)
 
@@ -187,6 +171,3 @@ st.write(f"- Nombre de trades: {len(trades_df)}")
 st.write(f"- Rendement moyen ($): {trades_df['Gain ($)'].mean():.2f}")
 st.write(f"- Durée moyenne d’un trade: {trades_df['Durée (jours)'].mean()}")
 st.write(f"- Trades gagnants: {(trades_df['Gain ($)'] > 0).sum()} / {len(trades_df)}")
-
-# === DEBUG INFO ===
-st.sidebar.markdown(f"📂 Fichiers enregistrés dans : `{SAVE_DIR}/`")
