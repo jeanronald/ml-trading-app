@@ -11,7 +11,7 @@ import os
 
 # === PAGE SETUP ===
 st.set_page_config(page_title="ML Trading App", layout="wide")
-st.title("📈 Machine Learning Trading Strategy")
+st.title("📈 Machine Learning Trading Strategy(© JR Avril 2025)")
 
 # === SIDEBAR ===
 etf_list = ["XEG.TO","XIT.TO","XGD.TO"]
